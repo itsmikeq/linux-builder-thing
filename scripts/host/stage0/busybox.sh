@@ -12,13 +12,17 @@ msg "busybox config"
 make -C "$src" O="$B" "${CROSS[@]}" defconfig &&
 cd "$B" &&
 # Static, no PIE. 'tc' is disabled: it fails against Linux >= 6.8 UAPI (CBQ removed).
+# BB_GLOBAL_CONST='': busybox declares ptr_to_globals 'const' and assigns it via a cast;
+# clang 21 reuses the stale (NULL) value, e.g. awk segfaults writing to address 0x4.
+# libbb.h documents this define as the switch for such toolchains.
 sed -i -e 's/^# CONFIG_STATIC is not set/CONFIG_STATIC=y/' \
        -e 's/^CONFIG_TC=y/# CONFIG_TC is not set/' \
        -e 's/^CONFIG_FEATURE_TC_INGRESS=y/# CONFIG_FEATURE_TC_INGRESS is not set/' \
        -e 's/^CONFIG_SHA1_HWACCEL=y/# CONFIG_SHA1_HWACCEL is not set/' \
        -e 's/^CONFIG_SHA256_HWACCEL=y/# CONFIG_SHA256_HWACCEL is not set/' \
-       -e 's/^CONFIG_PIE=y/# CONFIG_PIE is not set/' .config &&
-yes "" | make "${CROSS[@]}" oldconfig >/dev/null &&
+       -e 's/^CONFIG_PIE=y/# CONFIG_PIE is not set/' \
+       -e "s/^CONFIG_EXTRA_CFLAGS=.*/CONFIG_EXTRA_CFLAGS=\"-DBB_GLOBAL_CONST=''\"/" .config &&
+( set +o pipefail; yes "" | make "${CROSS[@]}" oldconfig >/dev/null ) &&   # yes(1) dies of SIGPIPE
 msg "busybox build" &&
 make "${CROSS[@]}" -j"$JOBS"
 } >"$LOGDIR/busybox.log" 2>&1 || die "busybox failed; see $LOGDIR/busybox.log"
