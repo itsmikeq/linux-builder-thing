@@ -12,7 +12,10 @@ R=$S0/initramfs; rm -rf "$R"; mkdir -p "$R"/{vendor,bin,proc,sys,dev,work,tmp}
 cp "$BBX" "$R/vendor/busybox"           # stand-in for the vendor's own userland
 cat > "$R/bin/sh" <<'SH'
 #!/vendor/busybox sh
-echo "vendor /bin/sh used: $*" >> /work/.vendor-sh-audit
+# Record the parent program: distinguishes build-system leaks (make, scripts run by
+# path) from libc system()/popen(), which POSIX hardwires to /bin/sh.
+p=$(/vendor/busybox readlink /proc/$PPID/exe 2>/dev/null)
+echo "vendor /bin/sh used: parent=${p:-?} :: $*" >> /work/.vendor-sh-audit
 exec /vendor/busybox sh "$@"
 SH
 chmod 755 "$R/bin/sh"

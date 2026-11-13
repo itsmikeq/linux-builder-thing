@@ -95,6 +95,15 @@ fix_shebangs() {
     touch -r "$f.rbs-mtime" "$f"; rm -f "$f.rbs-mtime"
     n=$((n+1)); echo "shebang -> $BB/sh: ${f#$SRC/}"
   done
+  # autoconf's AC_PROG_MAKE_SET writes a throwaway makefile with a hardcoded
+  # 'SHELL = /bin/sh' into conftest.make; point it at the bundled shell too.
+  find "$SRC" -name configure -type f | while IFS= read -r f; do
+    grep -q '^SHELL = /bin/sh$' "$f" || continue
+    touch -r "$f" "$f.rbs-mtime"
+    sed -i "s|^SHELL = /bin/sh\$|SHELL = $BB/sh|" "$f"
+    touch -r "$f.rbs-mtime" "$f"; rm -f "$f.rbs-mtime"
+    echo "conftest SHELL -> $BB/sh: ${f#$SRC/}"
+  done
   # Report other interpreters (not rewritten): they must be provided by a package.
   grep -rlE '^#! ?/(usr/)?bin/(env )?(perl|python|bash)' "$SRC" 2>/dev/null | head -20 | sed 's/^/note: other interpreter: /' || true
 }

@@ -31,10 +31,20 @@ if [ ! -d rbs ]; then echo "rbs: unpacking bundle"; ./busybox tar -xf rbs-bundle
 if [ -f rbs-overlay.tar ]; then echo "rbs: applying overlay"; ./busybox tar -xf rbs-overlay.tar && ./busybox rm -f rbs-overlay.tar; fi
 export JOBS=${JOBS:-}
 $(IFS=';'; for st in $steps; do echo "./busybox sh rbs/scripts/target/bootstrap.sh $extra $st"; done)
-if [ -s /work/.vendor-sh-audit ]; then
-  echo "FAIL: the vendor /bin/sh was used by the bootstrap:"; ./busybox head -20 /work/.vendor-sh-audit; exit 1
+# Vendor-shell audit. Allowed: libc system()/popen() from configure test programs
+# (POSIX hardwires /bin/sh; the vendor OS provides sh by assumption). Everything else
+# (scripts run by path, make recipes, hardcoded SHELL=/bin/sh) is a hermeticity leak.
+A=/work/.vendor-sh-audit
+if [ -s \$A ]; then
+  libc=\$(./busybox grep -c 'parent=[^ ]*/conftest ::' \$A || true)
+  if ./busybox grep -v 'parent=[^ ]*/conftest ::' \$A > /work/.vendor-sh-leaks; then
+    echo "FAIL: build-system use of the vendor /bin/sh:"; ./busybox sort /work/.vendor-sh-leaks | ./busybox uniq -c | ./busybox head -20; exit 1
+  fi
+  echo "PASS: no build-system use of the vendor /bin/sh (\$libc libc system()/popen() calls from configure test programs)"
+else
+  echo "PASS: vendor /bin/sh never used"
 fi
-echo "PASS: vendor /bin/sh never used; no vendor tools on PATH"
+echo "PASS: no vendor tools on PATH (hermetic env -i, PATH inside the bundle)"
 RUN
 if [ -n "${RESUME:-}" ] && [ -f "$IMG" ]; then
   debugfs -w -R "rm /run.sh" "$IMG" >/dev/null 2>&1 || true

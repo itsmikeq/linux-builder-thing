@@ -55,9 +55,16 @@ Stage 4, once we own the root filesystem.
 `bootstrap.sh` re-execs itself with `env -i` and
 `PATH=<stage prefixes>:<toolchain>/bin:<bundle>/bootstrap/bin`. No vendor directory is on
 PATH. Configure scripts run as `$CONFIG_SHELL configure`, and make gets
-`SHELL=$CONFIG_SHELL`, so `#!/bin/sh` and make's default `/bin/sh` aren't used. The QEMU
-test's `/bin/sh` is an audit shim, and any use of it fails the test. `TMPDIR` and `HOME`
-point inside the bundle.
+`SHELL=$CONFIG_SHELL`. After extraction, `#!/bin/sh` (and `#!/usr/bin/env sh`) shebangs
+and autoconf's hardcoded `SHELL = /bin/sh` conftest makefile are rewritten to the bundled
+shell, with mtimes preserved so nothing is regenerated. GNU make is built with the bundled
+shell as its default. `TMPDIR` and `HOME` point inside the bundle.
+
+The QEMU test's `/bin/sh` is an audit shim that records each use and its parent program.
+Any build-system use (scripts run by path, make recipes, hardcoded `SHELL=/bin/sh`) fails
+the test. The one allowed use is libc `system()`/`popen()` from configure test programs:
+POSIX and musl hardwire `/bin/sh` there, and the vendor OS providing a POSIX `sh` is a
+stated baseline assumption. Those calls are counted and reported separately.
 
 ## Stamps, resume, rebuild
 
