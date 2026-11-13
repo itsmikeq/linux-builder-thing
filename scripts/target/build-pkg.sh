@@ -75,7 +75,8 @@ extract() {
 apply_patches() {
   for p in "$RBS/patches/$pkg"/*.patch; do
     [ -e "$p" ] || continue
-    echo "applying $p"; patch -d "$SRC" -p1 < "$p"
+    # busybox patch has no -d: apply from inside the tree
+    echo "applying $p"; ( cd "$SRC" && patch -p1 -i "$p" ) || return 1
   done
 }
 check_outputs() {
