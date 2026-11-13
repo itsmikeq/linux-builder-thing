@@ -2,6 +2,8 @@
 # PREP HOST: cross-compile a STATICALLY LINKED riscv64 clang/clang++/lld + LLVM
 # binutils replacements, linked against musl + libc++ + libunwind + compiler-rt.
 # Output: output/toolchain (relocatable: bin/, lib/clang/21/, sysroot/).
+# Installed with the real prefix (prefix "/" makes GNUInstallDirs use /usr/bin) and
+# no RPATH handling (static executables have no RPATH to rewrite).
 . "$(dirname "$0")/../common.sh"
 done_p llvm-bootstrap && { msg "llvm already done"; exit 0; }
 [ -x "$HL/clang" ] || die "pinned host clang missing; run host-llvm.sh first"
@@ -23,7 +25,7 @@ cmake -G Ninja -S "$src/llvm" -B "$B" \
   -DCMAKE_EXE_LINKER_FLAGS="-static -fuse-ld=lld --rtlib=compiler-rt --unwindlib=libunwind -stdlib=libc++" \
   -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
   -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY \
-  -DCMAKE_INSTALL_PREFIX=/ \
+  -DCMAKE_INSTALL_PREFIX="$TC" -DCMAKE_SKIP_RPATH=ON -DCMAKE_SKIP_INSTALL_RPATH=ON \
   -DLLVM_HOST_TRIPLE=$TARGET -DLLVM_DEFAULT_TARGET_TRIPLE=$TARGET \
   -DLLVM_TARGETS_TO_BUILD=RISCV -DLLVM_ENABLE_PROJECTS="clang;lld" \
   -DLLVM_NATIVE_TOOL_DIR="$NT" -DLLVM_TABLEGEN="$NT/llvm-tblgen" -DCLANG_TABLEGEN="$NT/clang-tblgen" \
@@ -38,7 +40,7 @@ cmake -G Ninja -S "$src/llvm" -B "$B" \
   -DLLVM_INSTALL_BINUTILS_SYMLINKS=ON -DLLVM_DISTRIBUTION_COMPONENTS="$COMPONENTS" \
   -DLLVM_PARALLEL_LINK_JOBS=2 -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON &&
 ninja -C "$B" -j"$JOBS" distribution &&
-DESTDIR="$TC" ninja -C "$B" install-distribution
+ninja -C "$B" install-distribution
 } >"$LOGDIR/llvm.log" 2>&1 || die "cross llvm failed; see $LOGDIR/llvm.log"
 
 # Driver configuration: relocatable (paths relative to the binary via <CFGDIR>).
