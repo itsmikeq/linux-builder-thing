@@ -79,6 +79,25 @@ apply_patches() {
     echo "applying $p"; ( cd "$SRC" && patch -p1 -i "$p" ) || return 1
   done
 }
+# Hermeticity: scripts run by path (build-aux/install-sh, git-version-gen, ...) would
+# make the kernel use the VENDOR /bin/sh via their '#!/bin/sh' line. Point them at the
+# bundled shell instead. mtimes are preserved so make never sees "changed" sources.
+fix_shebangs() {
+  n=0
+  grep -rlE '^#! ?(/bin/sh|/usr/bin/env sh)' "$SRC" 2>/dev/null | while IFS= read -r f; do
+    IFS= read -r first < "$f" || continue
+    case $first in
+      '#!/bin/sh'*|'#! /bin/sh'*|'#!/usr/bin/env sh'*|'#! /usr/bin/env sh'*) ;;
+      *) continue ;;
+    esac
+    touch -r "$f" "$f.rbs-mtime"
+    sed -i -e "1s|^#! \{0,1\}/usr/bin/env sh|#!$BB/sh|" -e "1s|^#! \{0,1\}/bin/sh|#!$BB/sh|" "$f"
+    touch -r "$f.rbs-mtime" "$f"; rm -f "$f.rbs-mtime"
+    n=$((n+1)); echo "shebang -> $BB/sh: ${f#$SRC/}"
+  done
+  # Report other interpreters (not rewritten): they must be provided by a package.
+  grep -rlE '^#! ?/(usr/)?bin/(env )?(perl|python|bash)' "$SRC" 2>/dev/null | head -20 | sed 's/^/note: other interpreter: /' || true
+}
 check_outputs() {
   rc=0
   for o in $pkg_outputs; do
@@ -108,6 +127,7 @@ SRC=$SRC_ROOT/s
 if [ -n "$pkg_in_tree" ]; then B=$SRC; else B=$SRC_ROOT/b; mkdir -p "$B"; fi
 export SRC B
 run patch apply_patches
+run shebangs fix_shebangs
 cd "$SRC"; run prepare pkg_prepare
 cd "$B"
 run configure pkg_configure
