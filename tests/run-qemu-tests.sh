@@ -20,6 +20,7 @@ case $level in
   pkg:*) steps="build ${level#pkg:}" ;;
   *) die "unknown level $level" ;;
 esac
+extra="$*"   # capture before IFS=';' below (it would join "$*" with ';')
 cat > "$R" <<RUN
 # Operator commands on the (simulated) vendor device. PATH is empty: only the
 # transferred ./busybox and the bundle are used.
@@ -29,7 +30,7 @@ if [ ! -d rbs ]; then echo "rbs: unpacking bundle"; ./busybox tar -xf rbs-bundle
 # RESUME runs: apply updated metadata/patches/target scripts on top of the unpacked bundle
 if [ -f rbs-overlay.tar ]; then echo "rbs: applying overlay"; ./busybox tar -xf rbs-overlay.tar && ./busybox rm -f rbs-overlay.tar; fi
 export JOBS=${JOBS:-}
-$(IFS=';'; for st in $steps; do echo "./busybox sh rbs/scripts/target/bootstrap.sh $* $st"; done)
+$(IFS=';'; for st in $steps; do echo "./busybox sh rbs/scripts/target/bootstrap.sh $extra $st"; done)
 if [ -s /work/.vendor-sh-audit ]; then
   echo "FAIL: the vendor /bin/sh was used by the bootstrap:"; ./busybox head -20 /work/.vendor-sh-audit; exit 1
 fi
