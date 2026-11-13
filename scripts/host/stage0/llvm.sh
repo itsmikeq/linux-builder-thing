@@ -39,9 +39,31 @@ cmake -G Ninja -S "$src/llvm" -B "$B" \
   -DCLANG_DEFAULT_CXX_STDLIB=libc++ -DCLANG_DEFAULT_OBJCOPY=llvm-objcopy \
   -DLLVM_INSTALL_BINUTILS_SYMLINKS=ON -DLLVM_DISTRIBUTION_COMPONENTS="$COMPONENTS" \
   -DLLVM_PARALLEL_LINK_JOBS=2 -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON &&
-ninja -C "$B" -j"$JOBS" distribution &&
-ninja -C "$B" install-distribution
+ninja -C "$B" -j"$JOBS" distribution
 } >"$LOGDIR/llvm.log" 2>&1 || die "cross llvm failed; see $LOGDIR/llvm.log"
+
+# Assemble the toolchain explicitly from the build tree (not via CMake install rules,
+# whose GNUInstallDirs/RPATH handling is wrong for this layout and which do not
+# create the clang++/ld.lld/binutils-name links).
+msg "assemble $TC"
+rm -rf "$TC/bin" "$TC/usr" "$TC/lib/clang/$LLVM_MAJOR/include"
+mkdir -p "$TC/bin" "$TC/lib/clang/$LLVM_MAJOR"
+for t in clang-$LLVM_MAJOR lld llvm-ar llvm-nm llvm-objcopy llvm-objdump llvm-readobj llvm-size \
+         llvm-strings llvm-symbolizer llvm-addr2line llvm-cxxfilt; do
+  [ -f "$B/bin/$t" ] || die "missing $B/bin/$t"
+  cp "$B/bin/$t" "$TC/bin/$t"
+done
+cp -a "$B/lib/clang/$LLVM_MAJOR/include" "$TC/lib/clang/$LLVM_MAJOR/include"
+cd "$TC/bin"
+for l in clang:clang-$LLVM_MAJOR clang++:clang-$LLVM_MAJOR clang-cpp:clang-$LLVM_MAJOR \
+         ld.lld:lld cc:clang c++:clang++ cpp:clang-cpp ld:ld.lld \
+         llvm-ranlib:llvm-ar llvm-strip:llvm-objcopy llvm-readelf:llvm-readobj \
+         ar:llvm-ar ranlib:llvm-ar nm:llvm-nm objcopy:llvm-objcopy strip:llvm-objcopy \
+         objdump:llvm-objdump readelf:llvm-readobj size:llvm-size strings:llvm-strings \
+         addr2line:llvm-addr2line c++filt:llvm-cxxfilt; do
+  ln -sf "${l#*:}" "${l%%:*}"
+done
+cd - >/dev/null
 
 # Driver configuration: relocatable (paths relative to the binary via <CFGDIR>).
 # -static: the vendor OS has no musl dynamic loader, and we must not need root to
@@ -53,8 +75,5 @@ cat > "$TC/bin/$TARGET.cfg" <<CFG
 -static
 -Wno-unused-command-line-argument
 CFG
-cd "$TC/bin"
-for l in cc:clang c++:clang++ cpp:clang-cpp ld:ld.lld; do ln -sf "${l#*:}" "${l%%:*}"; done
-[ -e clang-cpp ] || ln -sf clang clang-cpp
 bash "$RBS_ROOT/scripts/host/stage0/llvm-postcheck.sh"
 stamp llvm-bootstrap

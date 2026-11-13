@@ -14,8 +14,9 @@ IMG=${WORK_IMG:-$ROOT/output/qemu/work.img}
 R=$S0/run.sh
 bash "$ROOT/tests/host/check-bundle.sh" >/dev/null
 case $level in
-  smoke) steps="selftest probe-kernel" ;;
-  stage[1-4]) steps="selftest stage ${level#stage}" ;;
+  # one bootstrap.sh invocation per ';'-separated step
+  smoke) steps="selftest;probe-kernel" ;;
+  stage[1-4]) steps="selftest;stage ${level#stage}" ;;
   pkg:*) steps="build ${level#pkg:}" ;;
   *) die "unknown level $level" ;;
 esac
@@ -26,7 +27,7 @@ set -e
 cd /work
 if [ ! -d rbs ]; then echo "rbs: unpacking bundle"; ./busybox tar -xf rbs-bundle.tar; fi
 export JOBS=${JOBS:-}
-./busybox sh rbs/scripts/target/bootstrap.sh $* $steps
+$(IFS=';'; for st in $steps; do echo "./busybox sh rbs/scripts/target/bootstrap.sh $* $st"; done)
 if [ -s /work/.vendor-sh-audit ]; then
   echo "FAIL: the vendor /bin/sh was used by the bootstrap:"; ./busybox head -20 /work/.vendor-sh-audit; exit 1
 fi
