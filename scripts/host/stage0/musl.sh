@@ -19,8 +19,8 @@ msg "musl configure/build"
 {
   CC="$HOST_CC $XCFLAGS" AR=$HOST_AR RANLIB=$HOST_RANLIB LIBCC="$BUILTINS" \
   CFLAGS="-O2 -ffile-prefix-map=$src=/usr/src/musl" \
-    "$src/configure" --prefix=/usr --target=riscv64-linux-musl --disable-shared
-  make -j"$JOBS"
+    "$src/configure" --prefix=/usr --target=riscv64-linux-musl --disable-shared &&
+  make -j"$JOBS" &&
   make DESTDIR="$SYSROOT" install
 } >"$LOGDIR/musl.log" 2>&1 || die "musl failed; see $LOGDIR/musl.log"
 test -f "$SYSROOT/usr/lib/libc.a"

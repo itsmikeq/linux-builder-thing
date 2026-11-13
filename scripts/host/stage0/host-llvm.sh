@@ -17,8 +17,8 @@ cmake -G Ninja -S "$src/llvm" -B "$B" \
   -DCLANG_INCLUDE_TESTS=OFF -DCLANG_ENABLE_ARCMT=OFF -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
   -DLLVM_ENABLE_ZLIB=OFF -DLLVM_ENABLE_ZSTD=OFF -DLLVM_ENABLE_LIBXML2=OFF -DLLVM_ENABLE_LIBEDIT=OFF \
   -DLLVM_ENABLE_ASSERTIONS=OFF -DLLVM_PARALLEL_LINK_JOBS=2 \
-  -DLLVM_INSTALL_BINUTILS_SYMLINKS=OFF -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON
-ninja -C "$B" -j"$JOBS" install
+  -DLLVM_INSTALL_BINUTILS_SYMLINKS=OFF -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON &&
+ninja -C "$B" -j"$JOBS" install &&
 # tablegens for cross builds
 ninja -C "$B" -j"$JOBS" llvm-tblgen clang-tblgen llvm-min-tblgen
 } >"$LOGDIR/host-llvm.log" 2>&1 || die "host llvm failed; see $LOGDIR/host-llvm.log"

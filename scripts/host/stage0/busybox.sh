@@ -9,17 +9,17 @@ CROSS=(CC="$HOST_CC $XCFLAGS $XLDFLAGS -Wno-unused-command-line-argument" LD=ld.
        HOSTCC=gcc ARCH=riscv KBUILD_BUILD_TIMESTAMP="1970-01-01" KBUILD_BUILD_USER=rbs KBUILD_BUILD_HOST=rbs)
 msg "busybox config"
 {
-make -C "$src" O="$B" "${CROSS[@]}" defconfig
-cd "$B"
+make -C "$src" O="$B" "${CROSS[@]}" defconfig &&
+cd "$B" &&
 # Static, no PIE. 'tc' is disabled: it fails against Linux >= 6.8 UAPI (CBQ removed).
 sed -i -e 's/^# CONFIG_STATIC is not set/CONFIG_STATIC=y/' \
        -e 's/^CONFIG_TC=y/# CONFIG_TC is not set/' \
        -e 's/^CONFIG_FEATURE_TC_INGRESS=y/# CONFIG_FEATURE_TC_INGRESS is not set/' \
        -e 's/^CONFIG_SHA1_HWACCEL=y/# CONFIG_SHA1_HWACCEL is not set/' \
        -e 's/^CONFIG_SHA256_HWACCEL=y/# CONFIG_SHA256_HWACCEL is not set/' \
-       -e 's/^CONFIG_PIE=y/# CONFIG_PIE is not set/' .config
-yes "" | make "${CROSS[@]}" oldconfig >/dev/null
-msg "busybox build"
+       -e 's/^CONFIG_PIE=y/# CONFIG_PIE is not set/' .config &&
+yes "" | make "${CROSS[@]}" oldconfig >/dev/null &&
+msg "busybox build" &&
 make "${CROSS[@]}" -j"$JOBS"
 } >"$LOGDIR/busybox.log" 2>&1 || die "busybox failed; see $LOGDIR/busybox.log"
 mkdir -p "$RBS_ROOT/output/bootstrap/bin"

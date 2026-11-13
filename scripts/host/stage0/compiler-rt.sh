@@ -20,7 +20,7 @@ cmake -G Ninja -S "$src/compiler-rt" -B "$B" \
   -DCOMPILER_RT_BUILD_SANITIZERS=OFF -DCOMPILER_RT_BUILD_XRAY=OFF -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
   -DCOMPILER_RT_BUILD_PROFILE=OFF -DCOMPILER_RT_BUILD_MEMPROF=OFF -DCOMPILER_RT_BUILD_ORC=OFF \
   -DCOMPILER_RT_BUILD_CTX_PROFILE=OFF -DCOMPILER_RT_BUILD_GWP_ASAN=OFF \
-  -DCOMPILER_RT_INCLUDE_TESTS=OFF
+  -DCOMPILER_RT_INCLUDE_TESTS=OFF &&
 ninja -C "$B" -j"$JOBS" install
 } >"$LOGDIR/compiler-rt.log" 2>&1 || die "compiler-rt failed; see $LOGDIR/compiler-rt.log"
 lib=$(find "$B/install" -name 'libclang_rt.builtins*.a' | head -1)

@@ -36,8 +36,8 @@ cmake -G Ninja -S "$src/llvm" -B "$B" \
   -DCLANG_DEFAULT_LINKER=lld -DCLANG_DEFAULT_RTLIB=compiler-rt -DCLANG_DEFAULT_UNWINDLIB=libunwind \
   -DCLANG_DEFAULT_CXX_STDLIB=libc++ -DCLANG_DEFAULT_OBJCOPY=llvm-objcopy \
   -DLLVM_INSTALL_BINUTILS_SYMLINKS=ON -DLLVM_DISTRIBUTION_COMPONENTS="$COMPONENTS" \
-  -DLLVM_PARALLEL_LINK_JOBS=2 -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON
-ninja -C "$B" -j"$JOBS" distribution
+  -DLLVM_PARALLEL_LINK_JOBS=2 -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON &&
+ninja -C "$B" -j"$JOBS" distribution &&
 DESTDIR="$TC" ninja -C "$B" install-distribution
 } >"$LOGDIR/llvm.log" 2>&1 || die "cross llvm failed; see $LOGDIR/llvm.log"
 
