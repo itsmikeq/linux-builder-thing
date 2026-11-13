@@ -1,0 +1,8 @@
+/sources/*
+!/sources/.keep
+/build/
+/output/
+/logs/
+/sysroot/
+__pycache__/
+/keys/gnu-keyring.gpg
