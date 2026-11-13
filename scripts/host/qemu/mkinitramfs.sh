@@ -29,9 +29,8 @@ rm_audit() { $B rm -f /work/.vendor-sh-audit; }
 rm_audit
 cd /work
 # Operator session: the vendor PATH is emptied; only explicit ./paths work.
-( PATH=/nonexistent; export PATH; /vendor/busybox sh /work/run.sh ) > /work/run.log 2>&1
-echo "$?" > /work/run.rc
-$B cat /work/run.log | $B tail -n 60
+# Output is streamed to the console (live progress) and kept in /work/run.log.
+( ( PATH=/nonexistent; export PATH; /vendor/busybox sh /work/run.sh ); echo "$?" > /work/run.rc ) 2>&1 | $B tee /work/run.log
 echo "RBS-EXIT=$($B cat /work/run.rc)"
 $B sync; cd /; $B umount /work; $B poweroff -f
 SH
