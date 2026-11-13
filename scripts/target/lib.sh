@@ -76,7 +76,7 @@ require_tools() {
   for _t in "$@"; do
     command -v "$_t" >/dev/null 2>&1 || _missing="$_missing $_t"
   done
-  [ -z "$_missing" ] || die "missing build tool(s):$_missing (PATH=$PATH). Build the providing package first; see manifest.lock 'edges'."
+  [ -z "$_missing" ] || die "missing build tool(s):$_missing (PATH=$PATH). Build the providing package first; see 'tool_providers' in manifest.lock."
 }
 
 # is_static_riscv <file>: ELF, machine RISC-V, no PT_INTERP, no DT_NEEDED

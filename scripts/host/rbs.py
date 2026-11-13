@@ -386,10 +386,13 @@ def cmd_resolve(a):
         for t in m["provides"]:
             providers.setdefault(t, []).append(m["name"])
     errors, warnings, unresolved = [], [], []
-    graph, edges = {n: set() for n in pk}, []
+    graph = {n: set() for n in pk}
+    tool_prov = {n: {} for n in pk}   # per package: tool -> providing package
 
     def add(frm, to, kind, why):
-        graph[frm].add(to); edges.append({"from": frm, "to": to, "kind": kind, "why": why})
+        graph[frm].add(to)
+        if kind == "build-tool":
+            tool_prov[frm][why] = to
 
     for m in pk.values():
         n = m["name"]
@@ -480,9 +483,9 @@ def cmd_resolve(a):
             "verification": vlog.get(n, {}).get("verification", "not verified in this tree"),
             "build_deps": sorted(pk[n]["build_deps"]), "build_tools": pk[n]["build_tools"],
             "runtime_deps": pk[n]["runtime_deps"], "resolved_edges": sorted(graph[n]),
+            "tool_providers": tool_prov[n],
             "where": "prep-host" if pk[n]["stage"] == 0 else "target-native",
         } for n in order],
-        "edges": sorted(edges, key=lambda e: (e["from"], e["to"])),
         "cycles": cycles, "unresolved": unresolved, "warnings": sorted(set(warnings)), "errors": errors,
     }
     with open(os.path.join(ROOT, "manifest.lock"), "w") as f:
