@@ -26,6 +26,8 @@ cat > "$R" <<RUN
 set -e
 cd /work
 if [ ! -d rbs ]; then echo "rbs: unpacking bundle"; ./busybox tar -xf rbs-bundle.tar; fi
+# RESUME runs: apply updated metadata/patches/target scripts on top of the unpacked bundle
+if [ -f rbs-overlay.tar ]; then echo "rbs: applying overlay"; ./busybox tar -xf rbs-overlay.tar && ./busybox rm -f rbs-overlay.tar; fi
 export JOBS=${JOBS:-}
 $(IFS=';'; for st in $steps; do echo "./busybox sh rbs/scripts/target/bootstrap.sh $* $st"; done)
 if [ -s /work/.vendor-sh-audit ]; then
@@ -36,6 +38,13 @@ RUN
 if [ -n "${RESUME:-}" ] && [ -f "$IMG" ]; then
   debugfs -w -R "rm /run.sh" "$IMG" >/dev/null 2>&1 || true
   debugfs -w -R "write $R /run.sh" "$IMG" >/dev/null
+  # Overlay: current packages/, patches/, target scripts and manifests (not the toolchain).
+  OV=$S0/rbs-overlay.tar; rm -rf "$S0/ov"; mkdir -p "$S0/ov/rbs/scripts" "$S0/ov/rbs/tests"
+  cp -a "$ROOT/packages" "$ROOT/patches" "$ROOT/manifest.lock" "$ROOT/manifest.order" "$S0/ov/rbs/"
+  cp -a "$ROOT/scripts/target" "$S0/ov/rbs/scripts/"; cp -a "$ROOT/tests/target" "$S0/ov/rbs/tests/"
+  tar --owner=0 --group=0 --numeric-owner -C "$S0/ov" -cf "$OV" rbs
+  debugfs -w -R "rm /rbs-overlay.tar" "$IMG" >/dev/null 2>&1 || true
+  debugfs -w -R "write $OV /rbs-overlay.tar" "$IMG" >/dev/null
   msg "resuming with existing $IMG"
 else
   bash "$ROOT/scripts/host/qemu/mkworkdisk.sh" "$IMG" "$R" "${DISK_SIZE:-24G}" >/dev/null

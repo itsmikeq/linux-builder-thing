@@ -1,0 +1,13 @@
+--- a/lib/termcap/tparam.c
++++ b/lib/termcap/tparam.c
+@@ -34,6 +34,10 @@
+ #include <string.h>
+ #endif
+ 
++#if defined (HAVE_UNISTD_H)
++#include <unistd.h>	/* write(); clang >= 16 rejects implicit declarations */
++#endif
++
+ #if !defined (HAVE_BCOPY) && (defined (HAVE_STRING_H) || defined (STDC_HEADERS))
+ #  define bcopy(s, d, n)	memcpy ((d), (s), (n))
+ #endif
