@@ -1,0 +1,13 @@
+pkg_name=gzip
+pkg_version=1.13
+pkg_stage=1
+pkg_source_url="https://ftp.gnu.org/gnu/gzip/gzip-${pkg_version}.tar.xz"
+pkg_sig_url="${pkg_source_url}.sig"
+pkg_verify="gpg-detached:gnu-keyring.gpg"
+pkg_sha256=7454eb6935db17c6655576c2e1b0fabefd38b4d0936e0f87f48cd062ce91a057
+pkg_build_tools="sh cc make sed grep awk ar ranlib install diff cmp xargs"
+pkg_build_deps="llvm-bootstrap"
+pkg_runtime_deps=""
+pkg_provides="gzip gunzip zcat"
+pkg_outputs="bin/gzip"
+pkg_validate() { [ "$(echo hi | "$DESTDIR$PREFIX/bin/gzip" | "$DESTDIR$PREFIX/bin/gzip" -d)" = hi ]; }
