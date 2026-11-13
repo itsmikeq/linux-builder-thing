@@ -12,7 +12,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 level=${1:?usage: run-qemu-tests.sh smoke|stage1|stage2|stage3|stage4|pkg:NAME}; shift || true
 IMG=${WORK_IMG:-$ROOT/output/qemu/work.img}
 R=$S0/run.sh
-"$ROOT/tests/host/check-bundle.sh" >/dev/null
+bash "$ROOT/tests/host/check-bundle.sh" >/dev/null
 case $level in
   smoke) steps="selftest probe-kernel" ;;
   stage[1-4]) steps="selftest stage ${level#stage}" ;;
@@ -37,15 +37,15 @@ if [ -n "${RESUME:-}" ] && [ -f "$IMG" ]; then
   debugfs -w -R "write $R /run.sh" "$IMG" >/dev/null
   msg "resuming with existing $IMG"
 else
-  "$ROOT/scripts/host/qemu/mkworkdisk.sh" "$IMG" "$R" "${DISK_SIZE:-24G}" >/dev/null
+  bash "$ROOT/scripts/host/qemu/mkworkdisk.sh" "$IMG" "$R" "${DISK_SIZE:-24G}" >/dev/null
 fi
 set +e
-QEMU_LOG=$ROOT/logs/qemu-$level.log "$ROOT/scripts/host/qemu/run.sh" "$IMG"
+QEMU_LOG=$ROOT/logs/qemu-$level.log bash "$ROOT/scripts/host/qemu/run.sh" "$IMG"
 rc=$?
 set -e
 rm -rf "$ROOT/logs/target"; mkdir -p "$ROOT/logs/target"
-"$ROOT/scripts/host/qemu/getfile.sh" "$IMG" /rbs/logs "$ROOT/logs/target" || true
-"$ROOT/scripts/host/qemu/getfile.sh" "$IMG" /rbs/var "$ROOT/logs/target" || true
-"$ROOT/scripts/host/qemu/getfile.sh" "$IMG" /run.log "$ROOT/logs/target" 2>/dev/null || true
+bash "$ROOT/scripts/host/qemu/getfile.sh" "$IMG" /rbs/logs "$ROOT/logs/target" || true
+bash "$ROOT/scripts/host/qemu/getfile.sh" "$IMG" /rbs/var "$ROOT/logs/target" || true
+bash "$ROOT/scripts/host/qemu/getfile.sh" "$IMG" /run.log "$ROOT/logs/target" 2>/dev/null || true
 [ $rc = 0 ] && msg "TEST $level: PASS" || msg "TEST $level: FAIL (rc=$rc); logs in logs/target and logs/qemu-$level.log"
 exit $rc

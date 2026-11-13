@@ -31,7 +31,7 @@ e2fsprogs (`mke2fs`, `debugfs`), cpio, and `qemu-system-riscv64` + OpenSBI for t
 About 25 GB disk.
 
 ```bash
-keys/fetch-keys.sh                         # upstream signing keys (pinned sha256 + fingerprint)
+bash keys/fetch-keys.sh                    # upstream signing keys (pinned sha256 + fingerprint)
 ```
 ```bash
 python3 scripts/host/rbs.py fetch          # download + verify every pinned source (sha256)
@@ -43,10 +43,10 @@ python3 scripts/host/rbs.py analyze        # static build-system analysis
 python3 scripts/host/rbs.py resolve        # -> manifest.lock / manifest.order (fails on errors)
 ```
 ```bash
-JOBS=$(nproc) scripts/host/stage0/all.sh   # pinned host clang, then static riscv64 toolchain + busybox
+JOBS=$(nproc) bash scripts/host/stage0/all.sh   # pinned host clang, then static riscv64 toolchain + busybox
 ```
 ```bash
-scripts/host/mkbundle.sh                   # -> output/bundle/{busybox,rbs-bundle.tar,SHA256SUMS}
+bash scripts/host/mkbundle.sh              # -> output/bundle/{busybox,rbs-bundle.tar,SHA256SUMS}
 ```
 
 To bump a version: edit `pkg_version`, clear `pkg_sha256=`, then run
@@ -88,16 +88,16 @@ Re-running a stage resumes: built packages are skipped. Other entry points:
 ## Testing without hardware (QEMU)
 
 ```bash
-scripts/host/qemu/build-test-kernel.sh && scripts/host/qemu/mkinitramfs.sh
+bash scripts/host/qemu/build-test-kernel.sh && bash scripts/host/qemu/mkinitramfs.sh
 ```
 ```bash
-tests/run-qemu-tests.sh smoke          # selftest + kernel probe in a simulated vendor OS, no network
+bash tests/run-qemu-tests.sh smoke      # selftest + kernel probe in a simulated vendor OS, no network
 ```
 ```bash
-tests/run-qemu-tests.sh stage1         # native stage 1 builds inside qemu-system-riscv64
+bash tests/run-qemu-tests.sh stage1     # native stage 1 builds inside qemu-system-riscv64
 ```
 ```bash
-RESUME=1 tests/run-qemu-tests.sh stage2
+RESUME=1 bash tests/run-qemu-tests.sh stage2
 ```
 
 The QEMU guest's only userland is a stand-in "vendor" shell, and its `/bin/sh` is an

@@ -54,5 +54,5 @@ CFG
 cd "$TC/bin"
 for l in cc:clang c++:clang++ cpp:clang-cpp ld:ld.lld; do ln -sf "${l#*:}" "${l%%:*}"; done
 [ -e clang-cpp ] || ln -sf clang clang-cpp
-"$RBS_ROOT/scripts/host/stage0/llvm-postcheck.sh"
+bash "$RBS_ROOT/scripts/host/stage0/llvm-postcheck.sh"
 stamp llvm-bootstrap

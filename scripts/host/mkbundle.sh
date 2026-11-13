@@ -40,5 +40,5 @@ tar --sort=name --mtime="@$SDE" --owner=0 --group=0 --numeric-owner --format=gnu
     -C "$S0/bundle-stage" -cf "$BD/rbs-bundle.tar" rbs
 cp "$RBS_ROOT/output/bootstrap/bin/busybox" "$BD/busybox"
 ( cd "$BD" && sha256sum busybox rbs-bundle.tar > SHA256SUMS )
-"$RBS_ROOT/tests/host/check-bundle.sh"
+bash "$RBS_ROOT/tests/host/check-bundle.sh"
 ls -l "$BD"; cat "$BD/SHA256SUMS"
