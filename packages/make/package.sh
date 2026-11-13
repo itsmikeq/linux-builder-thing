@@ -12,7 +12,8 @@ pkg_provides="make gmake"
 # Bootstrap cycle: make is needed to build make. Broken by upstream build.sh.
 pkg_cycle_break="make"
 pkg_outputs="bin/make"
-pkg_configure_opts="--disable-nls --without-guile --disable-load"
+# No make exists yet: automake's depfiles step would run make at the end of configure.
+pkg_configure_opts="--disable-nls --without-guile --disable-load --disable-dependency-tracking"
 pkg_build() { sh ./build.sh; }
 pkg_install() { mkdir -p "$DESTDIR$PREFIX/bin"; cp make "$DESTDIR$PREFIX/bin/make"; ln -sf make "$DESTDIR$PREFIX/bin/gmake"; }
 pkg_validate() { "$DESTDIR$PREFIX/bin/make" --version | head -1 | grep -q 'GNU Make 4.4.1'; }
