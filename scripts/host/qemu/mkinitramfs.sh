@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# PREP HOST (test infrastructure): initramfs that SIMULATES THE MINIMAL VENDOR OS.
+# Contents: a stand-in "vendor" shell only. No make/tar/curl/python/compilers.
+# /bin/sh is an AUDIT shim: every use is logged to /work/.vendor-sh-audit, so the
+# tests can prove the bootstrap never falls back to the vendor shell (e.g. via
+# '#!/bin/sh' shebangs or make's default SHELL). /usr/bin/env does not exist.
+. "$(dirname "$0")/../common.sh"
+OUT=$RBS_ROOT/output/qemu; mkdir -p "$OUT"
+BBX=$RBS_ROOT/output/bootstrap/bin/busybox
+[ -f "$BBX" ] || die "build busybox first"
+R=$S0/initramfs; rm -rf "$R"; mkdir -p "$R"/{vendor,bin,proc,sys,dev,work,tmp}
+cp "$BBX" "$R/vendor/busybox"           # stand-in for the vendor's own userland
+cat > "$R/bin/sh" <<'SH'
+#!/vendor/busybox sh
+echo "vendor /bin/sh used: $*" >> /work/.vendor-sh-audit
+exec /vendor/busybox sh "$@"
+SH
+chmod 755 "$R/bin/sh"
+cat > "$R/init" <<'SH'
+#!/vendor/busybox sh
+B=/vendor/busybox
+$B mount -t proc proc /proc
+$B mount -t sysfs sys /sys
+$B mount -t devtmpfs dev /dev
+$B mount -t tmpfs tmp /tmp
+$B mount -t ext4 /dev/vda /work || { echo "RBS: cannot mount work disk"; $B poweroff -f; }
+echo "RBS: vendor-sim booted: $($B uname -srm)"
+rm_audit() { $B rm -f /work/.vendor-sh-audit; }
+rm_audit
+cd /work
+# Operator session: the vendor PATH is emptied; only explicit ./paths work.
+( PATH=/nonexistent; export PATH; /vendor/busybox sh /work/run.sh ) > /work/run.log 2>&1
+echo "$?" > /work/run.rc
+$B cat /work/run.log | $B tail -n 60
+echo "RBS-EXIT=$($B cat /work/run.rc)"
+$B sync; cd /; $B umount /work; $B poweroff -f
+SH
+chmod 755 "$R/init"
+( cd "$R" && find . | LC_ALL=C sort | cpio -o -H newc --quiet --reproducible ) | gzip -9n > "$OUT/initramfs.cpio.gz"
+ls -l "$OUT/initramfs.cpio.gz"

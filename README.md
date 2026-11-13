@@ -17,7 +17,7 @@ packages/<pkg>/package.sh   metadata (+ build functions) for every package, pinn
 scripts/host/               PREP HOST ONLY (bash/Python): rbs.py, stage0/, qemu/, mkbundle.sh
 scripts/target/             RISC-V ONLY (POSIX sh): bootstrap.sh, build-pkg.sh, lib.sh
 tests/host/  tests/target/  tests/run-qemu-tests.sh
-keys/                       upstream signing keys (trust anchors)
+keys/fetch-keys.sh          fetches upstream signing keys (pinned trust anchors)
 manifest.lock               resolved, locked dependency graph (JSON)
 manifest.order              build order consumed by the target (plain text)
 sources/ build/ output/ logs/ sysroot/   generated (git-ignored)
@@ -31,7 +31,7 @@ e2fsprogs (`mke2fs`, `debugfs`), cpio, and `qemu-system-riscv64` + OpenSBI for t
 About 25 GB disk.
 
 ```bash
-keys/fetch-keys.sh                         # GNU keyring (pinned sha256; too big to vendor)
+keys/fetch-keys.sh                         # upstream signing keys (pinned sha256 + fingerprint)
 ```
 ```bash
 python3 scripts/host/rbs.py fetch          # download + verify every pinned source (sha256)
