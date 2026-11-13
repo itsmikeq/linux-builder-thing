@@ -1,0 +1,18 @@
+--- a/configure
++++ b/configure
+@@ -15050,6 +15050,7 @@
+ 	fi
+ 	for i in . support extension
+ 	do
++		test -f $i/Makefile || continue	# extension/ absent with --disable-extensions
+ 		sed -e '/-O2/s///' -e '/^CFLAGS = /s//&${DEBUG} /' $i/Makefile > foo
+ 		mv foo $i/Makefile
+ 	done
+@@ -15057,6 +15058,7 @@
+ then
+ 	for i in . support extension
+ 	do
++		test -f $i/Makefile || continue	# extension/ absent with --disable-extensions
+ 		sed -e '/-O2/s//-O3/g'  $i/Makefile > foo
+ 		mv foo $i/Makefile
+ 	done
