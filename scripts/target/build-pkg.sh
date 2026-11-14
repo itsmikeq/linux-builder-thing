@@ -154,5 +154,6 @@ run merge merge
   echo "files=$(wc -l < "$VAR/files/$pkg.files")"
 } > "$VAR/provenance/$pkg"
 echo "$version $sum" > "$VAR/stamps/$pkg.done"
+sync   # finished packages must survive a crash/kill of the machine
 [ -n "${KEEP_BUILD:-}" ] || rm -rf "$SRC_ROOT" "$DESTDIR"
 msg "$pkg: done"
