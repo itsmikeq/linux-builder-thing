@@ -28,8 +28,8 @@ $B mount -t devtmpfs dev /dev
 $B mount -t tmpfs tmp /tmp
 $B mount -t ext4 /dev/vda /work || { echo "RBS: cannot mount work disk"; $B poweroff -f; }
 echo "RBS: vendor-sim booted: $($B uname -srm)"
-rm_audit() { $B rm -f /work/.vendor-sh-audit; }
-rm_audit
+# The vendor-shell audit is cumulative for the life of the work disk, so a run that is
+# resumed after a crash/restart still yields one complete audit (fresh disk = fresh audit).
 cd /work
 # Operator session: the vendor PATH is emptied; only explicit ./paths work.
 # Output is streamed to the console (live progress) and kept in /work/run.log.

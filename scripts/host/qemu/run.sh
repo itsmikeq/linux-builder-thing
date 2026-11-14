@@ -15,7 +15,7 @@ timeout "${QEMU_TIMEOUT:-86400}" qemu-system-riscv64 \
   -machine virt -cpu "$CPU" -smp "$SMP" -m "$MEM" -nographic -no-reboot \
   -bios default -kernel "$OUT/Image" -initrd "$OUT/initramfs.cpio.gz" \
   -append "console=ttyS0 rdinit=/init quiet" \
-  -drive file="$IMG",format=raw,if=virtio,cache=unsafe \
+  -drive file="$IMG",format=raw,if=virtio,cache=writeback \
   -nic none </dev/null 2>&1 | tee "$CON" | grep -a --line-buffered -E '^(rbs:|RBS|PASS|FAIL|SELFTEST|###)' || true
 rc=$(tr -d '\r' < "$CON" | sed -n 's/^RBS-EXIT=\([0-9]*\).*/\1/p' | tail -1)
 [ -n "$rc" ] || die "guest did not report an exit status (crash/timeout); see $CON"
